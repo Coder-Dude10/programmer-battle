@@ -24,7 +24,6 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 0 9px #293a73;
 }
 
 button:hover {
@@ -33,7 +32,6 @@ button:hover {
 
 .button:active {
   background-color: #0a1436;
-  box-shadow: 0 5px #293a73;
   transform: translateY(4px);
 }
 
@@ -53,10 +51,10 @@ input {
   </head>
   <body style="background-color: #0e1425; overflow: hidden;">
     <div id="GUI">
-      <img src="https://i.ibb.co/vYXDSVw/user-icon.jpg" style="width: 100px; border-radius: 50%; padding: 20px; position: absolute; top: 0px;">
+      <img id="player1-avatar" src="https://i.ibb.co/vYXDSVw/user-icon.jpg" style="width: 100px; border-radius: 50%; padding: 20px; position: absolute; top: 0px;">
       <p id="player1-username" style="position: absolute; padding-left: 30px; font-size: 20px; position: absolute; left: 1vw; top: 100px;">Loading...</p>
       <p id="player1-score" style="position: absolute; padding-left: 30px; font-size: 40px; position: absolute; left: 0.8vw; top: 120px;">0</p>
-      <img src="https://i.ibb.co/vYXDSVw/user-icon.jpg" style="width: 100px; border-radius: 50%; padding: 20px; position: absolute; left: 89vw; top: 0px;">
+      <img id="player2-avatar" src="https://i.ibb.co/vYXDSVw/user-icon.jpg" style="width: 100px; border-radius: 50%; padding: 20px; position: absolute; left: 89vw; top: 0px;">
       <p id="player2-username" style="position: absolute; padding-left: 30px; font-size: 20px; position: absolute; left: 89.5vw; top: 100px;">Loading...</p>
       <p id="player2-score" style="position: absolute; padding-left: 30px; font-size: 40px; position: absolute; left: 88vw; top: 120px;">0</p>
     </div>
@@ -70,10 +68,14 @@ input {
       <img id="icon" onclick="openNew();" src="https://i.ibb.co/rQf5bT6/open-in-new-tab-icon.png">
       <br>
       <input id="input">
-      <button id="submit" onclick="submitInput();" style="width: 100px; height: 45px; box-shadow: none;">Submit</button>
+      <br>
+      <button id="avatar-input" onclick="readClipboard();">Paste Image Address</button>
+      <button id="submit" onclick="submitInput();">Submit</button>
+      <br>
       <br>
       <div id="select-battle">
         <button onclick="start();">Start Battle</button>
+        <br>
         <select id="select" style="width: 100px; height: 30px; color: #071b55;">
           <option>15 seconds</option>
           <option>30 seconds</option>
@@ -90,13 +92,15 @@ input {
         <br>
         <p>or</p>
         <br>
-        <button onclick="join();">Join Battle</button>
+        <button onclick="join();" style="position: absolute; top: 11vw;">Join Battle</button>
       </div>
     </div>
-    <p id="output">Banana!</p>
+    <p id="output"></p>
     <script>
       var submit = new Audio("150222__pumodi__menu-select.mp3");
       var selectBattle = new Audio("notification-140376.mp3");
+      var correct = new Audio("correct.wav");
+      var incorrect = new Audio("incorrect.wav");
       var exampleOffset = 0;
       var player1Score = 0;
       var player2Score = 0;
@@ -106,6 +110,7 @@ input {
       var exampleID = 0;
       var countdown = 0;
       var timeData = 0;
+      var avatarSrc = "default";
       var startBattle = "false";
       var currentURL = "";
       var username = "";
@@ -113,26 +118,56 @@ input {
       var result = "";
       var input = "";
       var data = "";
-      var accessToken = atob("Z2hwX2FJRlBEdE9MU1pmNXYyZWFGRzlJZzgxSUlCdWZzZDFRQXF6aw==");
+      var accessToken = atob("Z2hwX0hNNXRrTUx3WFBRMkpJanlBU2lZTHdwaU1OYzVEejNLVXhxdQ==");
 
       document.getElementById("img").setAttribute("style", "height: 0px; border-radius: 8px;");
       document.getElementById("icon").setAttribute("style", "width: 30px; cursor: pointer; opacity: 0;");
-      document.getElementById("select-battle").setAttribute("style", "opacity: 1;");
+      document.getElementById("select-battle").setAttribute("style", "opacity: 1; position: absolute; left: 2vw;");
       document.getElementById("input").setAttribute("placeholder", "Username");
       document.getElementById("progress-bar").setAttribute("style", "opacity: 0; width: 0px;");
       document.getElementById("GUI").setAttribute("style", "opacity: 0;");
-      document.getElementById("banner").setAttribute("style", "position: absolute; left: 30vw; top: -10px;");
-      document.getElementById("output").setAttribute("style", "opacity: 0; position: absolute; left: 38vw; top: 40vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+      document.getElementById("banner").setAttribute("style", "position: absolute; left: 30vw; top: -10px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+      document.getElementById("output").setAttribute("style", "opacity: 0; position: absolute; left: 38vw; top: 42vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+      document.getElementById("submit").setAttribute("style", "opacity: 0; width: 100px; height: 45px;");
+      document.getElementById("avatar-input").setAttribute("style", "opacity: 1; width: 150px; height: 10px; position: absolute; top: 14vw; left: 4vw; font-size: 10px; padding-top: 5px; padding-bottom: 20px;");
 
       function start() {
-        if (username != "") {
+        if (document.getElementById("input").value != "") {
+          username = document.getElementById("input").value;
           document.getElementById("img").setAttribute("style", "height: 200px; border-radius: 8px;");
           document.getElementById("icon").setAttribute("style", "width: 30px; cursor: pointer; opacity: 1;");
-          document.getElementById("select-battle").setAttribute("style", "opacity: 0;");
+          document.getElementById("select-battle").setAttribute("style", "opacity: 0; position: absolute; top: 200px; left: 45vw;");
           document.getElementById("GUI").setAttribute("style", "opacity: 1;");
-          document.getElementById("banner").setAttribute("style", "height: 250px; position: absolute; left: 35vw; top: -10px;");
+          document.getElementById("banner").setAttribute("style", "height: 250px; position: absolute; left: 35vw; top: -10px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+          document.getElementById("submit").setAttribute("style", "opacity: 1; width: 100px; height: 45px;");
+          document.getElementById("avatar-input").setAttribute("style", "opacity: 0; width: 150px; height: 10px; position: absolute; top: 14vw; left: 4vw; font-size: 10px; padding-top: 5px; padding-bottom: 20px;");
           document.getElementById("input").setAttribute("placeholder", "Your answer");
           document.getElementById("player1-username").innerHTML = username;
+
+          if (avatarSrc != "default") {
+            document.getElementById("player1-avatar").setAttribute("src", avatarSrc);
+          }
+
+          if (document.getElementById("select-language").value ==  "Random") {
+            exampleOffset = -1;
+          }
+
+          if (document.getElementById("select-language").value ==  "C") {
+            exampleOffset = 0;
+          }
+
+          if (document.getElementById("select-language").value ==  "Javascript") {
+            exampleOffset = 4;
+          }
+
+          if (document.getElementById("select-language").value ==  "Python") {
+            exampleOffset = 8;
+          }
+
+          if (document.getElementById("select-language").value ==  "Java") {
+            exampleOffset = 12;
+          }
+
           startBattle = "true";
           currentData = -1;
           selectBattle.play();
@@ -142,14 +177,21 @@ input {
       }
 
       function join() {
-        if (username != "") {
+        if (document.getElementById("input").value != "") {
+          username = document.getElementById("input").value;
           document.getElementById("img").setAttribute("style", "height: 200px; border-radius: 8px;");
           document.getElementById("icon").setAttribute("style", "width: 30px; cursor: pointer; opacity: 1;");
           document.getElementById("select-battle").setAttribute("style", "opacity: 0;");
           document.getElementById("GUI").setAttribute("style", "opacity: 1;");
-          document.getElementById("banner").setAttribute("style", "height: 250px; position: absolute; left: 35vw; top: -10px;");
+          document.getElementById("banner").setAttribute("style", "height: 250px; position: absolute; left: 35vw; top: -10px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+          document.getElementById("submit").setAttribute("style", "opacity: 1; width: 100px; height: 45px;");
+          document.getElementById("avatar-input").setAttribute("style", "opacity: 0; width: 150px; height: 10px; position: absolute; top: 14vw; left: 4vw; font-size: 10px; padding-top: 5px; padding-bottom: 20px;");
           document.getElementById("input").setAttribute("placeholder", "Your answer");
           document.getElementById("player2-username").innerHTML = username;
+
+          if (avatarSrc != "default") {
+            document.getElementById("player2-avatar").setAttribute("src", avatarSrc);
+          }
           
           var xhttp4 = new XMLHttpRequest();
           xhttp4.onreadystatechange = function() {
@@ -157,6 +199,27 @@ input {
               var unparsedData = atob(JSON.parse(this.responseText).content).replace(/[^\d.]/g, '');
               timeData = parseInt(unparsedData);
               document.getElementById("timer").innerHTML = "Waiting for the other player to answer...";
+
+              if (atob(JSON.parse(this.responseText).content).includes("Random")) {
+                exampleOffset = -1;
+              }
+              
+              if (atob(JSON.parse(this.responseText).content).includes("C")) {
+                exampleOffset = 0;
+              }
+              
+              if (atob(JSON.parse(this.responseText).content).includes("Javascript")) {
+                exampleOffset = 4;
+              }
+              
+              if (atob(JSON.parse(this.responseText).content).includes("Python")) {
+                exampleOffset = 8;
+              }
+              
+              if (atob(JSON.parse(this.responseText).content).includes("Java")) {
+                exampleOffset = 12;
+              }
+
               countdown = -1;
               selectBattle.play();
               getExample();
@@ -175,13 +238,9 @@ input {
       function submitInput() {
         if (document.getElementById("input") != "") {
           submit.play();
-          if (username == "") {
-            username = document.getElementById("input").value;
-          } else {
-            currentTime = countdown;
-            input = document.getElementById("input").value;
-            document.getElementById("submit").innerHTML = "Edit";
-          }
+          currentTime = countdown;
+          input = document.getElementById("input").value;
+          document.getElementById("submit").innerHTML = "Edit";
         }
       }
 
@@ -191,7 +250,14 @@ input {
         }
       });
 
+      function readClipboard() {
+        submit.play();
+        navigator.clipboard.readText().then((clipText) => (avatarSrc = clipText));
+      }
+
       function startTimer() {
+        document.getElementById("input").value = "";
+
         if (timeData == 0) {
           if (document.getElementById("select").value == "15 seconds") {
             countdown = 15;
@@ -240,28 +306,28 @@ input {
             }
 
             if (timeData == 0) {
-              if (document.getElementById("select").value == "15 seconds" && countdown == -17) {
+              if (document.getElementById("select").value == "15 seconds" && countdown == -20) {
                 clearTimeout(timer);
                 startTimer();
                 getExample();
                 getData();
               }
               
-              if (document.getElementById("select").value == "30 seconds" && countdown == -32) {
+              if (document.getElementById("select").value == "30 seconds" && countdown == -35) {
                 clearTimeout(timer);
                 startTimer();
                 getExample();
                 getData();
               }
               
-              if (document.getElementById("select").value == "1 minute" && countdown == -62) {
+              if (document.getElementById("select").value == "1 minute" && countdown == -65) {
                 clearTimeout(timer);
                 startTimer();
                 getExample();
                 getData();
               }
               
-              if (document.getElementById("select").value == "5 minutes" && countdown == -302) {
+              if (document.getElementById("select").value == "5 minutes" && countdown == -305) {
                 clearTimeout(timer);
                 startTimer();
                 getExample();
@@ -271,7 +337,13 @@ input {
 
               if (timeData == 15 && countdown == (-15 - timeOffset)) {
                 clearTimeout(timer);
-                timeOffset += 2;
+
+                if (timeData == 0) {
+                  timeOffset = 2;
+                } else {
+                  timeOffset += 4;
+                }
+
                 startTimer();
                 getExample();
                 getData();
@@ -279,7 +351,13 @@ input {
               
               if (timeData == 30 && countdown == (-30 - timeOffset)) {
                 clearTimeout(timer);
-                timeOffset += 2;
+                
+                if (timeData == 0) {
+                  timeOffset = 2;
+                } else {
+                  timeOffset += 4;
+                }
+
                 startTimer();
                 getExample();
                 getData();
@@ -287,7 +365,13 @@ input {
               
               if (timeData == 60 && countdown == (-60 - timeOffset)) {
                 clearTimeout(timer);
-                timeOffset += 2;
+                
+                if (timeData == 0) {
+                  timeOffset = 2;
+                } else {
+                  timeOffset += 4;
+                }
+
                 startTimer();
                 getExample();
                 getData();
@@ -295,7 +379,13 @@ input {
               
               if (timeData == 300 && countdown == (-300 - timeOffset)) {
                 clearTimeout(timer);
-                timeOffset += 2;
+                
+                if (timeData == 0) {
+                  timeOffset = 2;
+                } else {
+                  timeOffset += 4;
+                }
+
                 startTimer();
                 getExample();
                 getData();
@@ -323,9 +413,6 @@ input {
             document.getElementById("progress-bar").setAttribute("style", "height: 20px; width: " + (150 / (timeData / countdown)) + "px;");
           }
 
-          console.log("Banana!1" + countdown);
-          console.log("Banana!2" + timeData);
-
           countdown--;
         }, 1000);
       }
@@ -338,9 +425,10 @@ input {
           currentData += 2;
           
           if (input == result.substr(0, result.length - 1)) {
-            data = btoa('{"username":"' + username + '", "correct":"true", "answer":"' + input + '", "time":"' + currentTime + '"}');
-            document.getElementById("output").setAttribute("style", "color: #129c0b; opacity: 1; position: absolute; left: 38vw; top: 40vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+            data = btoa('{"username":"' + username + '", "avatar":"' + avatarSrc + '", "correct":"true", "answer":"' + input + '", "time":"' + currentTime + '"}');
+            document.getElementById("output").setAttribute("style", "color: #129c0b; opacity: 1; position: absolute; left: 38vw; top: 42vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
             document.getElementById("output").innerHTML = "Correct!";
+            correct.play();
 
             if (timeData == 0) {
               player1Score += (currentTime * 10);
@@ -354,9 +442,10 @@ input {
               document.getElementById("output").setAttribute("style", "opacity: 0; position: absolute; left: 38vw; top: 40vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
             }, 3000);
           } else {
-            data = btoa('{"username":"' + username + '", "correct":"false", "answer":"' + input + '", "time":"' + currentTime + '"}');
-            document.getElementById("output").setAttribute("style", "color: #c40c0c; opacity: 1; position: absolute; left: 20vw; top: 40vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
+            data = btoa('{"username":"' + username + '", "avatar":"' + avatarSrc + '", "correct":"false", "answer":"' + input + '", "time":"' + currentTime + '"}');
+            document.getElementById("output").setAttribute("style", "color: #c40c0c; opacity: 1; position: absolute; left: 20vw; top: 42vw; font-size: 30px; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;");
             document.getElementById("output").innerHTML = "Incorrect! The result of the program above is '" + result.substr(0, result.length - 1) + "'.";
+            incorrect.play();
 
             if (timeData == 0) {
               document.getElementById("player1-score").innerHTML = player1Score;
@@ -399,6 +488,10 @@ input {
               if (timeData == 0) {
                 document.getElementById("player2-username").innerHTML = JSON.parse(atob(JSON.parse(this.responseText).content)).username;
 
+                if (JSON.parse(atob(JSON.parse(this.responseText).content)).avatar != "default") {
+                  document.getElementById("player2-avatar").setAttribute("src", JSON.parse(atob(JSON.parse(this.responseText).content)).avatar);
+                }
+
                 if (JSON.parse(atob(JSON.parse(this.responseText).content)).correct == "true") {
                   document.getElementById("player2-score").setAttribute("style", "color: #129c0b; position: absolute; padding-left: 30px; font-size: 40px; position: absolute; left: 88vw; top: 120px;");
                   document.getElementById("player2-score").innerHTML = "✓ '" + JSON.parse(atob(JSON.parse(this.responseText).content)).answer + "' +" + (JSON.parse(atob(JSON.parse(this.responseText).content)).time * 10);
@@ -414,6 +507,10 @@ input {
                 }, 3000);
               } else {
                 document.getElementById("player1-username").innerHTML = JSON.parse(atob(JSON.parse(this.responseText).content)).username;
+
+                if (JSON.parse(atob(JSON.parse(this.responseText).content)).avatar != "default") {
+                  document.getElementById("player1-avatar").setAttribute("src", JSON.parse(atob(JSON.parse(this.responseText).content)).avatar);
+                }
 
                 if (JSON.parse(atob(JSON.parse(this.responseText).content)).correct == "true") {
                   document.getElementById("player1-score").setAttribute("style", "color: #129c0b; position: absolute; padding-left: 30px; font-size: 40px; position: absolute; left: 0.8vw; top: 120px;");
@@ -436,7 +533,12 @@ input {
         }
 
         function getExample() {
-          exampleID = Math.ceil(Math.random() * 4);
+          if (exampleOffset == -1) {
+            exampleID = Math.ceil(Math.random() * 16);
+          } else {
+            exampleID = (Math.ceil(Math.random() * 4)) + exampleOffset;
+          }
+
           var xhttp2 = new XMLHttpRequest();
           xhttp2.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
